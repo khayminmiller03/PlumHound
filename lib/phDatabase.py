@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound (phDatabase.py) Database Connection Management
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 from neo4j import GraphDatabase
+
 from lib.phLoggy import Loggy as Loggy
+
 
 # Setup Database Connection
 def setup_database_conn(phArgs):
@@ -28,7 +29,6 @@ def setup_database_conn(phArgs):
 
 def close_database_con(phArgs,connectiondriver):
     Loggy(phArgs.verbose,900, "------ENTER: CLOSE_DATABASE_CONN-----")
-    connectiondriver.close
+    connectiondriver.close()
     Loggy(phArgs.verbose,200, "[+] Closed Database Connection!")
     Loggy(phArgs.verbose,900, "------EXIT: CLOSE_DATABASE_CONN-----")
-    exit()

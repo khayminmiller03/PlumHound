@@ -1,0 +1,32 @@
+- title: "Return all Service Principals with MS Graph AZMGGrantAppRoles rights -> PrivEsc Path to Global Admin"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-GrantApp2GA
+  cypher: >
+    MATCH p=(n)-[r:AZMGGrantAppRoles]->(o:AZTenant) RETURN p
+
+- title: "Return all Service Principals with MS Graph App Role Assignments"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-GrantAppRole
+  cypher: >
+    MATCH p=(m:AZServicePrincipal)-[r:AZMGAppRoleAssignment_ReadWrite_All|AZMGApplication_ReadWrite_All|AZMGDirectory_ReadWrite_All|AZMGGroupMember_ReadWrite_All|AZMGGroup_ReadWrite_All|AZMGRoleManagement_ReadWrite_Directory|AZMGServicePrincipalEndpoint_ReadWrite_All]->(n:AZServicePrincipal) RETURN p
+
+- title: "Return all direct Controllers of MS Graph"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-GraphControlers
+  cypher: >
+    MATCH p = (n)-[r:AZAddOwner|AZAddSecret|AZAppAdmin|AZCloudAppAdmin|AZMGAddOwner|AZMGAddSecret|AZOwns]->(g:AZServicePrincipal {appdisplayname: 'Microsoft Graph'}) RETURN p
+
+- title: "Find shortest Paths to MS Graph"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Path2Graph
+  cypher: >
+    MATCH (n) WHERE NOT n.displayname='Microsoft Graph' WITH n MATCH p = shortestPath((n)-[r*1..]->(g:AZServicePrincipal {appdisplayname: 'Microsoft Graph'})) WHERE n<>g RETURN p
+

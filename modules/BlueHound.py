@@ -1,4 +1,4 @@
-from py2neo import Graph, Node, Relationship
+from py2neo import Graph
 
 #######################################################
 #
@@ -22,7 +22,7 @@ def analyzepath(fneodb,fneouser,fneopass,startnode,endnode):
         WHERE path IS NULL
         RETURN startNode(relToOmit).name as snode, endNode(relToOmit).name as enode, type(relToOmit) as rel, id(relToOmit) as relId"""
     graph = Graph(fneodb,user=fneouser,password=fneopass)
-    result=graph.run(query,snode=startnode,enode=endnode) 
+    result=graph.run(query,snode=startnode,enode=endnode)
     if result:
         while result.forward():
             print("Removing the relationship", result.current["rel"] ,"between", result.current["snode"] ,"and", result.current["enode"] ,"breaks the path!")
@@ -43,11 +43,11 @@ def getpaths(fneodb,fneouser,fneopass,startnode,endnode):
     paths=graph.run(query)
     # Extract the starting & ending node of each paths and send them to be analyzed
     path=paths.evaluate()
-    if path == None:
+    if path is None:
         print ("---------------------------------------------------------------------")
         print("There is no path between", startnode,"and", endnode)
         print ("---------------------------------------------------------------------")
-    while path != None:
+    while path is not None:
         snode=path.start_node["name"]
         enode=path.end_node["name"]
         print ("---------------------------------------------------------------------")
@@ -65,17 +65,17 @@ def find_busiest_path(fneodb,fneouser,fneopass,param,number):
     #ucount[0] = "a"
     if param.lower() == "all":
         query_shortpath="""MATCH p=allShortestPaths((n)-[*1..]->(m:Group)) where m.name starts with "DOMAIN ADMINS" and n<>m RETURN p"""
-    else: 
+    else:
         query_shortpath="""MATCH p=ShortestPath((n)-[*1..]->(m:Group)) where m.name starts with "DOMAIN ADMINS" and n<>m RETURN p"""
     paths=graph.run(query_shortpath)
     path=paths.evaluate()
-    if path == None:
+    if path is None:
         print ("---------------------------------------------------------------------")
         print("There is no ShortestPath")
         print ("---------------------------------------------------------------------")
     x=0
     ucount=[]
-    while path != None:
+    while path is not None:
         snode=path.start_node["name"]
         query_count_user="""match p=shortestpath((s)-[*1..]->(d:Group))
 where s.name = "%s" and d.name starts with "DOMAIN ADMINS" and s<>d
@@ -102,7 +102,7 @@ return count(distinct(u))
 
 def main():
     # Nothing here as this code should be used with Plumhound : https://github.com/PlumHound/PlumHound
-    x=0
+    pass
 
 if __name__ == "__main__":
     main()

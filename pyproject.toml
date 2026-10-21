@@ -7,9 +7,9 @@ name = "plumhound"
 version = "1.7.8"
 description = "BloodHoundAD reporting engine for Blue and Purple Teams"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 keywords = [ "bloodhound", "bloodhoundad", "plumhound", "active-directory", "activedirectory", "neo4j", "blue-team", "purple-team", "reporting", "security",]
-classifiers = [ "Development Status :: 5 - Production/Stable", "Environment :: Console", "Intended Audience :: Information Technology", "Intended Audience :: System Administrators", "License :: OSI Approved :: GNU General Public License v3 (GPLv3)", "Programming Language :: Python", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.8", "Programming Language :: Python :: 3.9", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Topic :: Security", "Topic :: System :: Systems Administration", "Topic :: Utilities",]
+classifiers = [ "Development Status :: 5 - Production/Stable", "Environment :: Console", "Intended Audience :: Information Technology", "Intended Audience :: System Administrators", "License :: OSI Approved :: GNU General Public License v3 (GPLv3)", "Programming Language :: Python", "Programming Language :: Python :: 3", "Programming Language :: Python :: 3 :: Only", "Programming Language :: Python :: 3.10", "Programming Language :: Python :: 3.11", "Programming Language :: Python :: 3.12", "Programming Language :: Python :: 3.13", "Topic :: Security", "Topic :: System :: Systems Administration", "Topic :: Utilities",]
 dynamic = [ "dependencies",]
 [[project.authors]]
 name = "PlumHound Team"
@@ -47,3 +47,34 @@ include = [ "lib*", "modules*",]
 
 [tool.setuptools.dynamic.dependencies]
 file = [ "requirements.txt",]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501","UP036", "UP031"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "modules.AzHound",
+    "modules.BlueHound",
+    "modules.ph_ReportIndexer",
+    "modules.ph_TaskZipper",
+    "lib.phDeliver",
+    "lib.phLoggy",
+    "lib.phCheckPython",
+    "lib.phCLImanagement",
+    "lib.phNotifyArgs",
+    "lib.phDatabase",
+    "lib.phTasks",
+    "PlumHound",
+    "neo4jScript",
+]
+ignore_errors = true

@@ -1,0 +1,64 @@
+- title: "Certificate Templates"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Certificate Template' RETURN n.`Display Name` as Name, n.highvalue as HighValue, n.Enabled as Enabled, n.`Enrollee Supplies Subject` as EnroleeSuppliesSjb, n.domain as Domain, n.`Extended Key Usage` as `Key Usage`
+
+- title: "Certificate Authorities"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateAuthorties
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Enrollment Service' RETURN n.`DNS Name` as DNS, n.`CA Name` as Name, n.domain as Domain, n.`Web Enrollment` as `Web Enrollment`
+
+- title: "Certificate Enrollment Rights"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplateEnrollRights
+  cypher: >
+    MATCH p=(g)-[:Enroll|AutoEnroll]->(n:GPO) WHERE n.type = 'Certificate Template' return n.`Display Name` as Template, n.Enabled as Enabled, g.name as `Enrollment Rights`
+
+- title: "Certificate Template ESC1 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC1
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Certificate Template' and n.`Enrollee Supplies Subject` = true and n.`Client Authentication` = true and n.`Enabled` = true  RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+
+- title: "Certificate Template ESC2 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC2
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Certificate Template' and n.`Enabled` = true and (n.`Extended Key Usage` = [] or 'Any Purpose' IN n.`Extended Key Usage`) RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+
+- title: "Certificate Template ESC3 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC3
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Certificate Template' and n.`Enabled` = true and (n.`Extended Key Usage` = [] or 'Any Purpose' IN n.`Extended Key Usage` or 'Certificate Request Agent' IN n.`Extended Key Usage`) RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+
+- title: "Certificate Template ESC6 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC6
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Enrollment Service' and n.`User Specified SAN` = 'Enabled' RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+
+- title: "Certificate Template ESC8 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC8
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Enrollment Service' and n.`Web Enrollment` = 'Enabled' RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+

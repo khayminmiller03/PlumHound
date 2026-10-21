@@ -1,0 +1,80 @@
+- title: "Return all Azure Service Principals"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-AllPrincipals
+  cypher: >
+    MATCH (sp:AZServicePrincipal) RETURN sp
+
+- title: "Find all VMs with a tied Managed Identity"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-VMwithManagedID
+  cypher: >
+    MATCH p=(:AZVM)-[:AZManagedIdentity]->(n) RETURN p
+
+- title: "Return all Azure Service Principals that are Managed Identities"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-AllManagedID
+  cypher: >
+    MATCH (sp:AZServicePrincipal {serviceprincipaltype: 'ManagedIdentity'}) RETURN sp
+
+- title: "Return all Azure Service Principals that are tied to Apps"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-PrincipalswithApp
+  cypher: >
+    MATCH (sp:AZServicePrincipal {serviceprincipaltype: 'Application'}) RETURN sp
+
+- title: "Find all Azure Privileged Service Principals"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-PrivPrincipals
+  cypher: >
+    MATCH p = (g:AZServicePrincipal)-[]->(n) RETURN p
+
+- title: "Find shortest Paths from Owned Azure Users to Azure Service Principals"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Own2Service
+  cypher: >
+    MATCH (u:AZUser {owned: true}), (m:AZServicePrincipal) MATCH p = shortestPath((u)-[*..]->(m)) RETURN p
+
+- title: "Find shortest Paths from Owned Azure Users to Azure Service Principals that are Managed Identities"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Own2ManagedID
+  cypher: >
+    MATCH (u:AZUser {owned: true}), (m:AZServicePrincipal {serviceprincipaltype: 'ManagedIdentity'}) MATCH p = shortestPath((u)-[*..]->(m)) RETURN p
+
+- title: "Find shortest Paths from all Azure Users to Azure Service Principals that are Managed Identities"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-User2ManagedID
+  cypher: >
+    MATCH (u:AZUser), (m:AZServicePrincipal {serviceprincipaltype: 'ManagedIdentity'}) MATCH p = shortestPath((u)-[*..]->(m)) RETURN p
+
+- title: "Find all Service Principals that are Managed Identities an have a Path to an Azure Key Vault"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-ManagedID2KeyVault
+  cypher: >
+    MATCH (m:AZServicePrincipal {serviceprincipaltype: 'ManagedIdentity'})-[*]->(kv:AZKeyVault) WITH collect(m) AS managedIdentities MATCH p = (n)-[r]->(kv:AZKeyVault) WHERE n IN managedIdentities RETURN p
+
+- title: "Find Paths from Managed Identities tied to a VM with a path to a Key Vault"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-ManagedIDVM2KeyVault
+  cypher: >
+    MATCH p1 = (:AZVM)-[:AZManagedIdentity]->(n) WITH collect(n) AS managedIdentities MATCH p2 = (m:AZServicePrincipal {serviceprincipaltype: 'ManagedIdentity'})-[*]->(kv:AZKeyVault) WHERE m IN managedIdentities RETURN p2
+

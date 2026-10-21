@@ -1,0 +1,32 @@
+- title: "Return all Users and Azure Users possibly related to AADConnect"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-UserWithAADConnect
+  cypher: >
+    MATCH (u) WHERE (u:User OR u:AZUser) AND (u.name =~ '(?i)^MSOL_|.*AADConnect.*' OR u.userprincipalname =~ '(?i)^sync_.*') OPTIONAL MATCH (u)-[:HasSession]->(s:Session) RETURN u, s
+
+- title: "Find all Sessions of possibly AADConnect related Accounts"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-AADConnectSessions
+  cypher: >
+    MATCH p=(m:Computer)-[:HasSession]->(n) WHERE (n:User OR n:AZUser) AND ((n.name =~ '(?i)^MSOL_|.*AADConnect.*') OR (n.userPrincipalName =~ '(?i)^sync_.*')) RETURN p
+
+- title: "Find all AADConnect Servers (extracted from the SYNC_ Account names)"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-ServerAADConnect
+  cypher: >
+    MATCH (n:AZUser) WHERE n.name =~ '(?i)^SYNC_(.*?)_(.*?)@.*' WITH n, split(n.name, '_')[1] AS computerNamePattern MATCH (c:Computer) WHERE c.name CONTAINS computerNamePattern RETURN c
+
+- title: "Find shortest Paths to AADConnect Servers from Owned Users"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Own2AADConnectServers
+  cypher: >
+    MATCH (n:AZUser) WHERE n.name =~ '(?i)^SYNC_(.*?)_(.*?)@.*' WITH n, split(n.name, '_')[1] AS computerNamePattern MATCH (c:Computer) WHERE c.name CONTAINS computerNamePattern WITH collect(c) AS computers MATCH p = shortestPath((u:User)-[*]-(c:Computer)) WHERE c IN computers AND length(p) > 0 AND u.owned = true RETURN u, p
+

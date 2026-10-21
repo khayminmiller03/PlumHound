@@ -1,25 +1,30 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound (phtasks.py) - Task Management and Execution
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 #Python Libraries
 import ast
 import copy
-from alive_progress import alive_bar
-from neo4j import GraphDatabase
-from neo4j import unit_of_work
+import logging
 
-#Plumhound modules
-from lib.phLoggy import Loggy as Loggy
+from alive_progress import alive_bar
+from neo4j import Query
+
 import lib.phDeliver
+import modules.AzHound
 
 #Plumhound Extensions
 import modules.BlueHound
-import modules.AzHound
 import modules.ph_ReportIndexer
 import modules.ph_TaskZipper
+
+#Plumhound modules
+from lib.phLoggy import Loggy as Loggy
+from lib.phRetry import retry_on_tran
+from lib.phTaskModel import Task
+
+logger = logging.getLogger("PlumHound")
 
 def MakeTaskList(phArgs):
     Loggy(phArgs.verbose,900, "------ENTER: MAKETASKLIST-----")
@@ -38,6 +43,36 @@ def MakeTaskList(phArgs):
         Loggy(phArgs.verbose,90, "")
         return tasks
 
+    if phArgs.YamlFile:
+        Loggy(phArgs.verbose, 500, "YAML task file specified. Reading")
+        import json
+
+        import yaml
+        tasks = []
+        with open(phArgs.YamlFile, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        for t in data:
+            try:
+                task = Task(**t)
+            except Exception as e:
+                logger.error(f"Invalid task skipped: {t.get('title', '?')} - {e}")
+                continue
+            title = task.title
+            fmt = task.format
+            out = task.output
+            query = task.cypher.strip()
+            cat = task.category
+            task_str = json.dumps([title, fmt, out, query, cat])
+            tasks.append(task_str)
+        Loggy(phArgs.verbose, 90, "Found " + str(len(tasks)) + " task(s)")
+        return tasks
+    """
+    if phArgs.SqlDB:
+        lib.phResultsDB.init_db(phArgs.SqlDB)
+        lib.phResultsDB.save_run(phArgs.SqlDB, sql_summaries)
+    """
+
+
     if phArgs.QuerySingle:
         Loggy(phArgs.verbose,500, "Tasks Single Query Specified. Reading")
         Loggy(phArgs.verbose,500, "Tasks-Title:" + phArgs.title)
@@ -53,7 +88,8 @@ def MakeTaskList(phArgs):
 
     if phArgs.BusiestPath:
         # Find and print on screen the X Attack Paths that give the most users a path to DA
-        bp=modules.BlueHound.find_busiest_path(phArgs.server, phArgs.username, phArgs.password, phArgs.BusiestPath[0], phArgs.BusiestPath[1])
+        modules.BlueHound.find_busiest_path(phArgs.server, phArgs.username, phArgs.password, phArgs.BusiestPath[0], phArgs.BusiestPath[1])
+
 
     if phArgs.AnalyzePath:
         if phArgs.AnalyzePath[0].upper() == "USER":
@@ -97,7 +133,7 @@ def MakeTaskList(phArgs):
             enode="GLOBAL ADMINISTRATOR"
         elif phArgs.AzPath[0].upper() == "AZDEVICE":
             snode="AZDevice"
-            enode="GLOBAL ADMINISTRATOR"           
+            enode="GLOBAL ADMINISTRATOR"
         else:
             snode=(phArgs.AzPath[0]).upper()
             enode=(phArgs.AzPath[1]).upper()
@@ -122,10 +158,10 @@ def TaskExecution(tasks, phDriver, phArgs):
     Loggy(phArgs.verbose,900, "------ENTER: TASKEXECUTION-----")
     Loggy(phArgs.verbose,500, "Begin Task Executions")
     Loggy(phArgs.verbose,500, "TASKS:" + str(tasks))
-    
+
     Outpath=phArgs.path
 
-    # Correct Path if sent as command line/not default. 
+    # Correct Path if sent as command line/not default.
     if "//" not in Outpath:
         Outpath=phArgs.path + "//"
 
@@ -136,7 +172,8 @@ def TaskExecution(tasks, phDriver, phArgs):
     task_output_list = []
 
     tasksuccess=0
-         
+    failed_task = []
+
     with alive_bar(len(tasks),title='\t Executing Tasks',length=50,theme='smooth',spinner=None,dual_line=True,monitor="Tasks {count} / {total} ") as tpbar:
         for job in tasks:
             tpbar()
@@ -148,6 +185,7 @@ def TaskExecution(tasks, phDriver, phArgs):
                 jobOutFormat = job_List[1]
                 jobOutPathFile = Outpath + job_List[2]
                 jobQuery = job_List[3]
+                #jobCategory = job_List[4] if len(job_List) > 4 else "Uncategorized"
 
                 tpbar.text("\t -> Task: " + jobTitle)
 
@@ -161,8 +199,8 @@ def TaskExecution(tasks, phDriver, phArgs):
                 if jobQuery == "REPORT-INDEX":
                     task_output_list_clean = copy.deepcopy(task_output_list) #copy the list and revert it after ReportIndexer
                     modules.ph_ReportIndexer.ReportIndexer(phArgs.verbose,task_output_list, jobOutPathFile, jobHTMLHeader, jobHTMLFooter, jobHTMLCSS)
-                    task_output_list = task_output_list_clean 
-                    task_output_list.append([jobTitle, len(jobresults_processed_list), job_List[2],jobOutFormat])
+                    task_output_list = task_output_list_clean
+                    task_output_list.append([jobTitle, 0, job_List[2],jobOutFormat])
                     tasksuccess += 1
                     continue
 
@@ -171,9 +209,9 @@ def TaskExecution(tasks, phDriver, phArgs):
                     modules.ph_TaskZipper.ZipTasks(phArgs.verbose,task_output_list, jobOutPathFile, Outpath)
                     tasksuccess += 1
                     continue
-                
+
                 #now returns native dict containing keys
-                jobkeys = get_keys(phArgs.verbose,phDriver, jobQuery)
+                jobkeys = get_keys(phArgs.verbose,phDriver, jobQuery, phArgs.timeout)
                 jobkeys_List = ast.literal_eval(str(jobkeys))
 
                 # If keys returned 0, make an empty list
@@ -181,7 +219,7 @@ def TaskExecution(tasks, phDriver, phArgs):
                     jobkeys_List = []
 
                 #
-                jobresults = execute_query(phArgs.verbose,phDriver, jobQuery)
+                jobresults = execute_query(phArgs.verbose,phDriver, jobQuery, phArgs.timeout)
                 jobresults_processed = "[" + process_results(phArgs.verbose,jobresults) + "]"
                 try:
                     jobresults_processed_list = ast.literal_eval(jobresults_processed)
@@ -198,13 +236,14 @@ def TaskExecution(tasks, phDriver, phArgs):
                 lib.phDeliver.SenditOut(phArgs.verbose,jobkeys_List, jobresults_processed_list, jobOutFormat, jobOutPathFile, "", jobTitle, jobHTMLHeader, jobHTMLFooter, jobHTMLCSS, jobQuery)
                 tasksuccess += 1
 
-            except Exception as er2:
-                Loggy(phArgs.verbose,100, "ERROR While running job (trying next job in list).")
-                print(er2)
+            except Exception as e:
+                logger.error(f"Task Failed: {jobTitle}: {e}")
+                failed_task.append(jobTitle)
+
 
     Loggy(phArgs.verbose,90, "")
-    Loggy(phArgs.verbose,90, "Completed " + str(tasksuccess) + " of " + str(len(tasks)) + " tasks.")        
-    Loggy(phArgs.verbose,90, "")   
+    Loggy(phArgs.verbose,90, "Completed " + str(tasksuccess) + " of " + str(len(tasks)) + " tasks.")
+    Loggy(phArgs.verbose,90, "")
 
 
     Loggy(phArgs.verbose,900, "------EXIT: TASKEXECUTION-----")
@@ -212,16 +251,20 @@ def TaskExecution(tasks, phDriver, phArgs):
     if tasksuccess != (len(tasks)):
         Loggy(phArgs.verbose,100, "Completed " + str(tasksuccess) + " of " + str(len(tasks)) + " tasks (Non-Lethal errors occurred).")
 
-    Loggy(phArgs.verbose,90, "")   
+    Loggy(phArgs.verbose,90, "")
+
+    if failed_task:
+        logger.error(f"{len(failed_task)} task(s) failed: {', '.join(failed_task)}")
+    return len(failed_task)
 
 # Setup Query
-@unit_of_work(timeout=300)
-def execute_query(verbose, phDriver, query, enabled=True):
+@retry_on_tran(max_attempts=3, delay=1)
+def execute_query(verbose, phDriver, query, timeout=300, enabled=True):
     Loggy(verbose,900, "------ENTER: EXECUTE_QUERY-----")
     try:
         with phDriver.session() as session:
             Loggy(verbose,500, "Running Query")
-            results = session.run(query)
+            results = session.run(Query(query, timeout=timeout))
             #results return a <class 'neo4j._sync.work.result.Result'>
             #https://neo4j.com/docs/api/python-driver/current/api.html#result
             #I have tried getting the number of records in the object, but its a bit tricky, all functions doing it in one step ive tired have been deprecated and removed in the new driver
@@ -235,26 +278,28 @@ def execute_query(verbose, phDriver, query, enabled=True):
             #Bloodhounds javascript is using recursion, id say its the way to go
             data = results.fetch(999999999999)
             if check_records(verbose, phDriver, query):
+                #NOTE: double running
                 Loggy(verbose,500, "Identified " + str(len(data)) + " Results")
             else:
                 Loggy(verbose,200, "Job result: No records found")
         Loggy(verbose,900, "------EXIT: EXECUTE_QUERY-----")
-    except Exception as er3:
-        Loggy(verbose,200,"Error occured in execute_query: ")
-        print(er3)
+    except Exception as e:
+        logger.error(f"Error in execute_query: {e}")
+        raise
+
     return data
 
-
 # Grab Keys for Cypher Query
-@unit_of_work(timeout=300)
-def get_keys(verbose,phDriver, query, enabled=True):
+@retry_on_tran(max_attempts=3, delay=1)
+def get_keys(verbose,phDriver, query, timeout=300, enabled=True):
     Loggy(verbose,900, "------ENTER: get_keys-----")
     try:
         Loggy(verbose,500, "get_keys Query: " + str(query))
         with phDriver.session() as session:
-            results = session.run(query)
+            results = session.run(Query(query, timeout=timeout))
             keys = results.keys()
             if check_records(verbose, phDriver, query):
+                #NOTE: tripple running
                 keys = results.keys()
                 Loggy(verbose,500, "Identified " + str(len(keys)) + " Results")
                 Loggy(verbose,500, "Keys Found")
@@ -263,9 +308,9 @@ def get_keys(verbose,phDriver, query, enabled=True):
                 keys = 0
         Loggy(verbose,500, "Key enumeration complete")
         Loggy(verbose,900, "------EXIT: get_keys-----")
-    except Exception as er4:
-        Loggy(verbose,200,"Error occured in get_keys: ")
-        print(er4)
+    except Exception as e:
+        logger.error(f"Error in get_keys: {e}")
+        raise
     return keys
 
 
@@ -280,9 +325,9 @@ def check_records(verbose, phDriver, query):
             else:
                 Loggy(verbose,200, "No Records Found")
             Loggy(verbose,900, "------EXIT: check_records-----")
-    except Exception as er5:
-        Loggy(verbose,200,"Error occured in check_records: ")
-        print(er5)
+    except Exception as e:
+        logger.error(f"Error in check_records: {e}")
+
     return first
 
 
@@ -292,8 +337,8 @@ def process_results(verbose,results):
     for record in results:
         try:
             BigTable = BigTable + str(record.values()) + ","
-        except Exception as er6:
-            Loggy(verbose,200, "Washing records failed. Error on record")
-            print(er6)
+        except Exception as e:
+            logger.error(f"Process Results: {e}")
+
     Loggy(verbose,900, "------EXIT: process_results-----")
     return BigTable

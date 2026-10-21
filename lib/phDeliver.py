@@ -1,17 +1,18 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound - Output Delivery and Parsing Functions(phdeliver.py)
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 #Python Libraries
 import ast
 import csv
-from tabulate import tabulate
 from datetime import datetime
+
+from tabulate import tabulate
 
 #Plumhound Modules
 from lib.phLoggy import Loggy as Loggy
+
 
 def SenditOut(verbose,list_KeysList, Processed_Results_List, OutFormat, OutFile, OutPath, Title, HTMLHeader, HTMLFooter, HTMLCSS, jobQuery):
     Loggy(verbose,900, "------ENTER: SENDITOUT-----")
@@ -24,7 +25,7 @@ def SenditOut(verbose,list_KeysList, Processed_Results_List, OutFormat, OutFile,
         Loggy(verbose,500, "Beginning Output CSV:" + OutPath + OutFile)
         with open(OutPath + OutFile, "w", newline="", encoding="utf-8") as f:
             Loggy(verbose,500, "KeyType: " + str(type(list_KeysList)))
-            Loggy(verbose,500, "KeyList: " + str((list_KeysList)))
+            Loggy(verbose,500, "KeyList: " + str(list_KeysList))
             writer = csv.writer(f)
             ModKeyList = ast.literal_eval("[" + str(list_KeysList) + "]")
             Loggy(verbose,500, "KeyTypeMod: " + str(type(ModKeyList)))
@@ -62,17 +63,17 @@ def SenditOut(verbose,list_KeysList, Processed_Results_List, OutFormat, OutFile,
         HTMLMId_str = "</head><Body>"
         HTMLEnd_str = "</body></html>"
         if HTMLHeader:
-            with open(HTMLHeader, 'r') as header:
+            with open(HTMLHeader) as header:
                 HTMLHeader_str = header.read()
             HTMLHeader_str = ReplaceHTMLReportVars(HTMLHeader_str, Title)
 
         if HTMLFooter:
-            with open(HTMLFooter, 'r') as footer:
+            with open(HTMLFooter) as footer:
                 HTMLFooter_str = footer.read()
             HTMLFooter_str = ReplaceHTMLReportVars(HTMLFooter_str, Title)
 
         if HTMLCSS:
-            with open(HTMLCSS, 'r') as css:
+            with open(HTMLCSS) as css:
                 HTMLCSS_str = "<style>\n" + css.read() + "\n</style>"
 
         Loggy(verbose,500, "File Writing " + OutPath + OutFile)
@@ -81,7 +82,7 @@ def SenditOut(verbose,list_KeysList, Processed_Results_List, OutFormat, OutFile,
         fsys.write(output)
         Loggy(verbose,150, "Task " + Title + " Complete: " + OutFile)
         Loggy(verbose,500, "File Closing " + OutPath + OutFile)
-        fsys.close
+        fsys.close()
         return True
     Loggy(verbose,900, "------EXIT: SENDITOUT-----")
 

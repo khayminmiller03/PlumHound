@@ -1,0 +1,24 @@
+- title: "Domains"
+  category: Domain
+  type: cypher
+  format: HTML
+  output: Domains.html
+  cypher: >
+    MATCH (n:Domain) return n.name as Domain, n.functionallevel as FunctionalLevel, n.highvalue as HighValue, n.domain as DNS, n.distinguishedname as DN, n.domainsid as SID
+
+- title: "Domain Users"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DomainUsers.html
+  cypher: >
+    MATCH (n:User) RETURN n.name as Name,n.displayname as DisplayName,n.enabled as Enabled, n.highvalue as HighValue,  n.description as Description, n.title as Title, n.pwdneverexpires as PWDNeverExpires, n.passwordnotreqd as PWDNotReqd, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPN, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

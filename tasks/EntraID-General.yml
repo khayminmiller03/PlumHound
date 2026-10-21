@@ -1,0 +1,88 @@
+- title: "Return all Members of the 'Global Administrator' Role"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-GlobalAdmin
+  cypher: >
+    MATCH p =(n)-[r:AZGlobalAdmin*1..]->(m) RETURN p
+
+- title: "Return all Members of High Privileged Roles"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-HighPriv
+  cypher: >
+    MATCH p=(n)-[:AZHasRole|AZMemberOf*1..2]->(r:AZRole WHERE r.displayname =~ '(?i)Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|PRIVILEGED AUTHENTICATION ADMINISTRATOR|Domain Name Administrator|Hybrid Identity Administrator|External Identity Provider Administrator') RETURN p
+
+- title: "Return all Members of High Privileged Roles that are synced from OnPrem AD"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-HighPrivSyncUsers
+  cypher: >
+    MATCH p=(n WHERE n.onpremisesyncenabled = true)-[:AZHasRole|AZMemberOf*1..2]->(r:AZRole WHERE r.displayname =~ '(?i)Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|PRIVILEGED AUTHENTICATION ADMINISTRATOR') RETURN p
+
+- title: "Return all Azure Users that are synced from OnPrem AD"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-SyncUsers
+  cypher: >
+    MATCH (n:AZUser WHERE n.onpremisesyncenabled = true) RETURN n
+
+- title: "Return all Azure Groups that are synced from OnPrem AD"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-SyncGroups
+  cypher: >
+    MATCH (g:AZGroup {onpremsyncenabled: True}) RETURN g
+
+- title: "Return all Azure Subscriptions"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-AzureSubs
+  cypher: >
+    MATCH (n:AZSubscription) RETURN n
+
+- title: "Return all Azure Subscriptions and their direct Controllers"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-SubAndControlers
+  cypher: >
+    MATCH p = (n)-[r:AZOwns|AZUserAccessAdministrator]->(g:AZSubscription) RETURN p
+
+- title: "Return all principals with the UserAccessAdministrator Role against Subscriptions"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-SubUserAccessAdmin
+  cypher: >
+    MATCH p = (u)-[r:AZUserAccessAdministrator]->(n:AZSubscription) RETURN p
+
+- title: "Return all prinicpals with the UserAccessAdministrator Role"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: EID-AllUserAccessAdmin
+  cypher: >
+    MATCH p = (u)-[r:AZUserAccessAdministrator]->(n) RETURN p
+
+- title: "Return all Azure Users that DON'T hold an Azure Role but the RBAC Role 'User Access Administrator'"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-UserNoRoleButAdmin
+  cypher: >
+    MATCH (u:AZUser) WHERE NOT EXISTS((u)-[:AZMemberOf|AZHasRole*1..]->(:AZRole)) AND EXISTS((u)-[:AZUserAccessAdministrator]->()) RETURN u
+
+- title: "Return all Azure Principals that DON'T hold an Azure Role but the RBAC Role 'User Access Administrator'"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-PrincipalNoRoleButAdmin
+  cypher: >
+    MATCH (u) WHERE NOT EXISTS((u)-[:AZMemberOf|AZHasRole*1..]->(:AZRole)) AND EXISTS((u)-[:AZUserAccessAdministrator]->()) RETURN u
+

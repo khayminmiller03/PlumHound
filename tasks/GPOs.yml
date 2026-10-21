@@ -1,0 +1,56 @@
+- title: "GPOs"
+  category: GPO
+  type: cypher
+  format: HTMLCSV
+  output: GPOs
+  cypher: >
+    Match (n:GPO) return n.name as GPO, n.highvalue as HighValue, n.gpcpath as Path
+
+- title: "GPO OU Links"
+  category: GPO
+  type: cypher
+  format: HTMLCSV
+  output: GPO_OU_Links
+  cypher: >
+    MATCH (u:GPO)-[:GPLink]->(g:OU) RETURN g.distinguishedname AS OU, u.name as GPO ORDER BY OU, GPO
+
+- title: "GPO Owners"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: GPOOwners
+  cypher: >
+    MATCH (u)-[:Owns]->(g:GPO) RETURN g.name AS GPO, u.name as Object, u.enabled as Enabled, head(labels(u)) as Type ORDER BY GPO, Object
+
+- title: "GPO Owners - Non-DA"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: GPOOwnersNonDA
+  cypher: >
+    MATCH (u1:User)-[:MemberOf*1..]->(g:Group) WHERE g.objectid ENDS WITH '-512' WITH COLLECT(u1.name) AS DAs MATCH (u2:User)-[:Owns]->(gp:GPO) WHERE NOT u2.name IN DAs  RETURN gp.name AS GPO, u2.name as Owner, u2.enabled as Enabled ORDER BY GPO, Owner
+
+- title: "GPOS - Non-DA Users With Interesting GPO Permissions"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: GPOs-UsersWithInterestingPermissions
+  cypher: >
+    MATCH (u1:User)-[:MemberOf*1..]->(g:Group) WHERE g.objectid ENDS WITH '-512' WITH COLLECT(u1.name) AS DAs MATCH (u2:User)-[r:AllExtendedRights|GenericAll|GenericWrite|Owns|WriteDacl|WriteOwner]->(g:GPO) WHERE NOT u2.name in DAs RETURN u2.name as User, type(r) as Relationship, g.name as GPO
+
+- title: "GPO Creator Owners"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: GPOCreatorOwners.html
+  cypher: >
+    MATCH p=(n:Group)<-[:MemberOf*1..]-(m) WHERE n.objectid =~ '(?i)S-1-5-.*-520' RETURN m.name as Name, m.displayname as DisplayName,m.description as Description, m.enabled as Enabled, m.pwdneverexpires as PWDNeverExpire, m.trustedtoauth as TrustedToAuth, m.unconstraineddelegation as UncDelegation 
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

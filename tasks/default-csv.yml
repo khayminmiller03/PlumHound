@@ -1,0 +1,312 @@
+- title: "Domain Users CSV"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: DomainUsers.CSV
+  cypher: >
+    MATCH (n:User) RETURN n.name as Name,n.displayname as DisplayName,n.enabled as Enabled, n.highvalue as HighValue,  n.description as Description, n.title as Title, n.pwdneverexpires as PWDNeverExpires, n.passwordnotreqd as PWDNotReqd, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPN, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon
+
+- title: "Keroastable Users"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Keroastable_Users.CSV
+  cypher: >
+    MATCH (n:User) WHERE n.hasspn=true RETURN n.name as Username, n.displayname as DisplayName,n.description as Description, n.title as Title, n.pwdneverexpires as PasswordNeverExpires, n.passwordnotreqd as PasswordNotRequired, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPNs
+
+- title: "RDPable Servers"
+  category: Access
+  type: cypher
+  format: CSV
+  output: Workstations_RDP.CSV
+  cypher: >
+    match p=(g:Group)-[:CanRDP]->(c:Computer) where  g.objectid ENDS WITH '-513'  AND c.operatingsystem CONTAINS 'Server' return c.name as Computer
+
+- title: "Unconstrained Delegation Computers with SPN"
+  category: Kerberos
+  type: cypher
+  format: CSV
+  output: Computers_UnconstrainedDelegation.CSV
+  cypher: >
+    MATCH (c:Computer {unconstraineddelegation:true}) return c.name as Computer, c.description as Description, c.serviceprincipalnames as SPN
+
+- title: "Admin Groups"
+  category: Privilege
+  type: cypher
+  format: CSV
+  output: AdminGroups.CSV
+  cypher: >
+    Match (n:Group) WHERE n.name CONTAINS 'ADMIN' return n.name as Name, n.highvalue as HighValue, n.description as Description, n.admincount as AdminCount
+
+- title: "Shortest Path to DA"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: ShortestPathDA.CSV
+  cypher: >
+    MATCH (n:Computer),(m:Group {name:'DOMAIN ADMINS@DOMAIN.GR'}),p=shortestPath((n)-[r:MemberOf|HasSession|AdminTo|AllExtendedRights|AddMember|ForceChangePassword|GenericAll|GenericWrite|Owns|WriteDacl|WriteOwner|CanRDP|ExecuteDCOM|AllowedToDelegate|ReadLAPSPassword|Contains|GpLink|AddAllowedToAct|AllowedToAct*1..]->(m)) RETURN p
+
+- title: "RDPable Groups"
+  category: Access
+  type: cypher
+  format: CSV
+  output: RDPableGroups.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:CanRDP]->(n:Computer) RETURN m.name as Group, n.name as Computer ORDER BY m.name
+
+- title: "RDPable Groups Count"
+  category: Access
+  type: cypher
+  format: CSV
+  output: RDPableGroupsCount.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:CanRDP]->(n:Computer) RETURN m.name as Group, count(*) as Computer ORDER BY Computer DESC
+
+- title: "PasswordResetter Groups"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Groups_CanResetPasswords.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:ForceChangePassword]->(n:User) RETURN m.name as Group, n.name as User ORDER BY m.name
+
+- title: "PasswordResetter Groups Count"
+  category: Privilege
+  type: cypher
+  format: CSV
+  output: Groups_CanResetPasswordsCount.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:ForceChangePassword]->(n:User) RETURN m.name as Group, count(*) as Users ORDER BY Users DESC
+
+- title: "LocalAdminGroups"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: LocalAdmin_Groups.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:AdminTo]->(n:Computer) RETURN m.name as Group, n.name as Computer ORDER BY m.name
+
+- title: "LocalAdminGroupsCount"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: LocalAdmin_Groups_Count.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:AdminTo]->(n:Computer) RETURN m.name as Group, count(*) as Computer ORDER BY Computer DESC
+
+- title: "LocalAdminUsers"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: LocalAdmin_Users.CSV
+  cypher: >
+    MATCH p=(m:User)-[r:AdminTo]->(n:Computer) RETURN m.name as User, n.name as Computer, n.enabled as Enabled, n.operatingsystem as OS ORDER BY m.name
+
+- title: "LocalAdminUsersCount"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: LocalAdmin_Users_Count.CSV
+  cypher: >
+    MATCH p=(m:User)-[r:AdminTo]->(n:Computer) RETURN m.name as User, count(*) as Computer ORDER BY Computer DESC
+
+- title: "Users Sessions"
+  category: Access
+  type: cypher
+  format: CSV
+  output: Users_Sessions.CSV
+  cypher: >
+    MATCH p=(n:User)--(c:Computer)-[:HasSession]->(n) return n.name as User,  c.name as Computer ORDER BY n.name
+
+- title: "Cross Domain Relationships"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: CrossDomainRelationships.CSV
+  cypher: >
+    MATCH (n)-[r]->(m) WHERE NOT n.domain = m.domain RETURN LABELS(n)[0] as Dom1Object ,n.name as Object1 ,TYPE(r) as Relationship ,LABELS(m)[0] as Dom2Object,m.name as Object2
+
+- title: "DA Sessions"
+  category: Access
+  type: cypher
+  format: CSV
+  output: DA_Sessions.CSV
+  cypher: >
+    MATCH (n:User)-[:MemberOf]->(g:Group) WHERE g.objectid ENDS WITH '-512' MATCH p = (c:Computer)-[:HasSession]->(n) return n.name as Username, c.name as Computer
+
+- title: "Keroastable Most Priv"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Keroastable_Users_MostPriv.CSV
+  cypher: >
+    MATCH (u:User {hasspn:true}) OPTIONAL MATCH (u)-[:AdminTo]->(c1:Computer) OPTIONAL MATCH (u)-[:MemberOf*1..]->(:Group)-[:AdminTo]->(c2:Computer) WITH u,COLLECT(c1) + COLLECT(c2) AS tempVar UNWIND tempVar AS comps RETURN u.name as KeroastableUser,COUNT(DISTINCT(comps)) as Computers ORDER BY COUNT(DISTINCT(comps)) DESC
+
+- title: "OUs By Computer Member Count"
+  category: Inventory
+  type: cypher
+  format: CSV
+  output: OUs_Count.CSV
+  cypher: >
+    MATCH (o:OU)-[:Contains]->(c:Computer) RETURN o.name as OU,COUNT(c) as Computers ORDER BY COUNT(c) DESC
+
+- title: "Permissions for Everyone and Authenticated Users"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Permissions_Everyone.CSV
+  cypher: >
+    MATCH p=(m:Group)-[r:AddMember|AdminTo|AllExtendedRights|AllowedToDelegate|CanRDP|Contains|ExecuteDCOM|ForceChangePassword|GenericAll|GenericWrite|GetChanges|GetChangesAll|HasSession|Owns|ReadLAPSPassword|SQLAdmin|TrustedBy|WriteDACL|WriteOwner|AddAllowedToAct|AllowedToAct]->(t) WHERE m.objectsid ENDS WITH '-513' OR m.objectsid ENDS WITH '-515' OR m.objectsid ENDS WITH 'S-1-5-11' OR m.objectsid ENDS WITH 'S-1-1-0' RETURN m.name as Group,TYPE(r) as Relationship,t.name as TargetNode,t.enabled as TargetEnabled
+
+- title: "Most Admin Priviledged Groups"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Groups_MostAdminPriviledged.CSV
+  cypher: >
+    MATCH (g:Group) OPTIONAL MATCH (g)-[:AdminTo]->(c1:Computer) OPTIONAL MATCH (g)-[:MemberOf*1..]->(:Group)-[:AdminTo]->(c2:Computer) WITH g, COLLECT(c1) + COLLECT(c2) AS tempVar UNWIND tempVar AS computers RETURN g.name AS GroupName,COUNT(DISTINCT(computers)) AS AdminRightCount ORDER BY AdminRightCount DESC
+
+- title: "Computers with Descriptions"
+  category: Systems
+  type: cypher
+  format: CSV
+  output: Computers_WithDescriptions.CSV
+  cypher: >
+    MATCH (c:Computer) WHERE c.description IS NOT NULL RETURN c.name as Computer,c.description as Description
+
+- title: "User No Kerb Needed"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Users_NoKerbReq.CSV
+  cypher: >
+    MATCH (n:User {dontreqpreauth: true}) RETURN n.name as Username, n.displayname as DisplayName, n.description as Description, n.title as Title, n.pwdneverexpires as PasswordNeverExpires, n.passwordnotreqd as PasswordNotRequired, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPNs
+
+- title: "Users Computer Direct Admin Count"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Users_Count_DirectAdminComputers.CSV
+  cypher: >
+    MATCH (u:User)-[:AdminTo]->(c:Computer) RETURN count(DISTINCT(c.name)) AS COMPUTER, u.name AS USER ORDER BY count(DISTINCT(c.name)) DESC
+
+- title: "Users Computer InDirect Admin Count"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Users_Count_InDirectAdminComputers.CSV
+  cypher: >
+    MATCH (u:User)-[:AdminTo]->(c:Computer) RETURN count(DISTINCT(c.name)) AS COMPUTER, u.name AS USER ORDER BY count(DISTINCT(c.name)) DESC
+
+- title: "NeverActive Active Users"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Users_NeverActive_Enabled.CSV
+  cypher: >
+    MATCH (n:User) WHERE n.lastlogontimestamp=-1.0 AND n.enabled=TRUE RETURN n.name as Username ORDER BY n.name
+
+- title: "Operating Systems Count"
+  category: Systems
+  type: cypher
+  format: CSV
+  output: OperatingSystemCount.CSV
+  cypher: >
+    MATCH (c:Computer) RETURN c.operatingsystem as OS, count(*) as Computers ORDER BY Computers DESC
+
+- title: "LAPS Deployment Count"
+  category: Systems
+  type: cypher
+  format: CSV
+  output: LapsDeploymentCount.CSV
+  cypher: >
+    MATCH (c:Computer) RETURN c.haslaps as LAPSEnabled, count(*) as Computers ORDER BY Computers DESC
+
+- title: "LAPS Not Enabled"
+  category: Systems
+  type: cypher
+  format: CSV
+  output: LapsNotEnabled.CSV
+  cypher: >
+    MATCH (c:Computer) WHERE c.haslaps=false RETURN c.haslaps as LAPSEnabled, c.name as Computer ORDER BY Computer
+
+- title: "Domain List"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Domains.CSV
+  cypher: >
+    MATCH (n:Domain) return n.name as Domain, n.functionallevel as FunctionalLevel, n.highvalue as HighValue, n.domain as DNS
+
+- title: "Operating Systems Unsupported"
+  category: Systems
+  type: cypher
+  format: CSV
+  output: OperatingSystemUnsupported.CSV
+  cypher: >
+    MATCH (c:Computer) WHERE c.operatingsystem =~ '.*(2000|2003|2008|2012|xp|vista|7|me).*' RETURN c.name as Computer, c.operatingsystem as UnsupportedOS, c.enabled as Enabled
+
+- title: "GPOs"
+  category: GPO
+  type: cypher
+  format: CSV
+  output: GPOs.CSV
+  cypher: >
+    Match (n:GPO) return n.name as GPO, n.highvalue as HighValue, n.gpcpath as Path
+
+- title: "HighValue Group Members"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Groups-HighValue-members.CSV
+  cypher: >
+    MATCH p=(n:User)-[r:MemberOf*1..]->(m:Group {highvalue:true}) RETURN n.name as User, m.name as Group
+
+- title: "Add Use Delegation"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: User-AddToGroupDelegation.CSV
+  cypher: >
+    MATCH (n:User {admincount:False}) MATCH p=allShortestPaths((n)-[r:AddMember*1..]->(m:Group)) RETURN n.name as User, m.name as Group
+
+- title: "Users Sessions"
+  category: Access
+  type: cypher
+  format: CSV
+  output: Users_Sessions.CSV
+  cypher: >
+    MATCH p=(c:Computer)-[r:HasSession]->(n:User) return n.name as User, c.name as Computer, c.operatingsystem as OS ORDER BY n.name
+
+- title: "Users Sessions Count"
+  category: Access
+  type: cypher
+  format: CSV
+  output: Users_Sessions_Count.CSV
+  cypher: >
+    MATCH p=(m:Computer)-[r:HasSession]->(n:User) RETURN n.name as User, count(*) as Computers ORDER BY Computers DESC
+
+- title: "Computers that have a Session"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: Computer_Sessions.CSV
+  cypher: >
+    MATCH p=(m:Computer)-[r:HasSession]->(n:User) RETURN m.name as Computer, m.operatingsystem as OS
+
+- title: "Users without Logon in past 6 Months"
+  category: Uncategorized
+  type: cypher
+  format: CSV
+  output: UsersNoRecentLogon.csv
+  cypher: >
+    WITH timestamp() / 1000 AS date_now MATCH (n:User) WHERE date_now - toInteger(n.lastlogontimestamp) > 15552000 AND n.lastlogontimestamp<>-1.0 RETURN n.name as Username, n.displayname as DisplayName, toInteger(n.lastlogontimestamp) as LastLogonTimeStamp
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

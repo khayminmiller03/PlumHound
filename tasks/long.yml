@@ -1,0 +1,56 @@
+- title: "Cross Domain Relationships"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: CrossDomainRelationships.html
+  cypher: >
+    MATCH (n)-[r]->(m) WHERE NOT n.domain = m.domain RETURN LABELS(n)[0] as Dom1Object ,n.name as Object1 ,TYPE(r) as Relationship ,LABELS(m)[0] as Dom2Object,m.name as Object2
+
+- title: "Users GPOs Access Weirdness"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_GPO_CheckACL.html
+  cypher: >
+    MATCH p=(u:User)-[r:AllExtendedRights|GenericAll|GenericWrite|Owns|WriteDacl|WriteOwner|GpLink*1..]->(g:GPO) RETURN p LIMIT 25
+
+- title: "Non-Admins with Add To Group Delegation (Limited to 10000)"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Non-Admins-with-Add-To-Group-Delegation.html
+  cypher: >
+    MATCH (n:User {admincount:False}) MATCH p=allShortestPaths((n)-[r:AddMember*1..]->(m:Group)) RETURN n.name as User, m.name as Group Limit 10000
+
+- title: "Non-Admins with Add To Group Delegation Count (Limited to 1000)"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Non-Admins-with-Add-To-Group-Delegation-Count.html
+  cypher: >
+    MATCH (n:User {admincount:False}) MATCH p=allShortestPaths((n)-[r:AddMember*1..]->(m:Group)) RETURN n.name as User, count(m.name) as Groups Limit 1000
+
+- title: "Kerberoastable Most Priv"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Kerberoastable_Users_MostPriv.html
+  cypher: >
+    MATCH (u:User {hasspn:true}) OPTIONAL MATCH (u)-[:AdminTo]->(c1:Computer) OPTIONAL MATCH (u)-[:MemberOf*1..]->(:Group)-[:AdminTo]->(c2:Computer) WITH u,COLLECT(c1) + COLLECT(c2) AS tempVar UNWIND tempVar AS comps RETURN u.name as KeroastableUser,COUNT(DISTINCT(comps)) as Computers ORDER BY COUNT(DISTINCT(comps)) DESC
+
+- title: "Most Admin Privileged Groups"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Groups_MostAdminPrivileged.html
+  cypher: >
+    MATCH (g:Group) OPTIONAL MATCH (g)-[:AdminTo]->(c1:Computer) OPTIONAL MATCH (g)-[:MemberOf*1..]->(:Group)-[:AdminTo]->(c2:Computer) WITH g, COLLECT(c1) + COLLECT(c2) AS tempVar UNWIND tempVar AS computers RETURN g.name AS GroupName,COUNT(DISTINCT(computers)) AS AdminRightCount ORDER BY AdminRightCount DESC
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

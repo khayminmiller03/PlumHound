@@ -1,4 +1,4 @@
-from py2neo import Graph, Node, Relationship
+from py2neo import Graph
 
 #######################################################
 #
@@ -19,7 +19,7 @@ def analyzepath(fneodb,fneouser,fneopass,startnode,endnode):
         OPTIONAL MATCH path = shortestPath((n)-[*1..]->(m))
         RETURN startNode(relToOmit).name as snode, endNode(relToOmit).name as enode, type(relToOmit) as rel, id(relToOmit) as relId"""
     graph = Graph(fneodb,user=fneouser,password=fneopass)
-    result=graph.run(query,snode=startnode,enode=endnode) 
+    result=graph.run(query,snode=startnode,enode=endnode)
     if result:
         while result.forward():
             print("Removing the relationship", result.current["rel"] ,"between", result.current["snode"] ,"and", result.current["enode"] ,"breaks the path!")
@@ -39,11 +39,11 @@ def getpaths(fneodb,fneouser,fneopass,startnode,endnode):
     paths=graph.run(query)
     # Extract the starting & ending node of each paths and send them to be analyzed
     path=paths.evaluate()
-    if path == None:
+    if path is None:
         print ("---------------------------------------------------------------------")
         print("There is no path between", startnode,"and", endnode)
         print ("---------------------------------------------------------------------")
-    while path != None:
+    while path is not None:
         snode=path.start_node["name"]
         enode=path.end_node["name"]
         print ("---------------------------------------------------------------------")
@@ -61,7 +61,7 @@ def getpaths(fneodb,fneouser,fneopass,startnode,endnode):
 #     graph = Graph(fneodb,user=fneouser,password=fneopass)
 #     if param.lower() == "all":
 #         query_shortpath="""MATCH p=allShortestPaths((n)-[*1..]->(m:AZRole)) where m.name starts with "GLOBAL ADMIN" and n<>m RETURN p"""
-#     else: 
+#     else:
 #         query_shortpath="""MATCH p=ShortestPath((n)-[*1..]->(m:AZRole)) where m.name starts with "GLOBAL ADMIN" and n<>m RETURN p"""
 #     paths=graph.run(query_shortpath)
 #     path=paths.evaluate()
@@ -101,7 +101,7 @@ def getpaths(fneodb,fneouser,fneopass,startnode,endnode):
 
 def main():
     # Nothing here as this code should be used with Plumhound : https://github.com/PlumHound/PlumHound
-    x=0
+    pass
 
 if __name__ == "__main__":
     main()

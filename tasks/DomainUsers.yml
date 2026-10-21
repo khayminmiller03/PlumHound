@@ -1,0 +1,152 @@
+- title: "Domain Users with path to DA"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DU_path_DA.html
+  cypher: >
+    MATCH p=ShortestPath((n:Group)-[*1..]->(m:Group)) WHERE n.name STARTS WITH 'DOMAIN USERS' and m.name CONTAINS 'DOMAIN ADMINS' AND n <> m RETURN p
+
+- title: "Domain Users Admin Rights"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DU_Admin_Comp.html
+  cypher: >
+    MATCH p=(m:Group)-[:AdminTo|MemberOf*1..]->(n:Computer) WHERE m.name STARTS WITH 'DOMAIN USERS' RETURN n.name as Computer
+
+- title: "Domain Users Can RDP"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DU_CanRDP_Comp.html
+  cypher: >
+    match p=(g:Group)-[:CanRDP|MemberOf*1..]->(c:Computer) where g.name STARTS WITH 'DOMAIN USERS' return c.name as Computer
+
+- title: "Domain Users with easy path to DA"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DU_Easy_Path_DA.html
+  cypher: >
+    match p=shortestpath((g:Group)-[:AdminTo|MemberOf|Owns|Contains|GenericAll*1..]->(m {highvalue:true})) where g.name starts with 'DOMAIN USERS' and g<>m return p
+
+- title: "Domain Users Unconstrained to Computer"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: DU_Unconstrain.html
+  cypher: >
+    MATCH p=shortestPath((g:Group)-[*1..]->(c:Computer {unconstraineddelegation: true}))  WHERE g.name STARTS WITH 'DOMAIN USERS' RETURN c.name as Computer
+
+- title: "Kerberoastable Users"
+  category: Kerberos
+  type: cypher
+  format: HTML
+  output: Kerberoastable_Users.html
+  cypher: >
+    MATCH (n:User) WHERE n.hasspn=true RETURN n.name as Username, n.displayname as DisplayName,n.description as Description, n.title as Title, n.pwdneverexpires as PasswordNeverExpires, n.passwordnotreqd as PasswordNotRequired, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPNs
+
+- title: "Users Sessions"
+  category: Access
+  type: cypher
+  format: HTML
+  output: Users_Sessions.html
+  cypher: >
+    MATCH p=(n:User)--(c:Computer)-[:HasSession]->(n) return n.name as User,  c.name as Computer ORDER BY n.name
+
+- title: "Users Sessions Count"
+  category: Access
+  type: cypher
+  format: HTML
+  output: Users_Sessions_Count.html
+  cypher: >
+    MATCH p=(n:User)--(c:Computer)-[:HasSession]->(n) return n.name as User, count(*) as Computers ORDER BY Computers DESC
+
+- title: "Users With 6 Month Old Passwords"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_6MoOldPasswords.html
+  cypher: >
+    WITH timestamp() / 1000 AS date_now MATCH (n:User) WHERE date_now - toInteger(n.pwdlastset) > 15552000 AND n.pwdlastset<>-1.0  AND n.pwdlastset<>0.0 RETURN n.name as Username, n.displayname as DisplayName, n.description as Description, n.enabled as Enabled, n.admincount as AdminCount, n.pwdneverexpires as PassNeverExpire, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon ORDER BY n.pwdlastset
+
+- title: "Users With 5 Year Old Passwords"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_5YrOldPasswords.html
+  cypher: >
+    WITH timestamp() / 1000 AS date_now MATCH (n:User) WHERE date_now - toInteger(n.pwdlastset) > 157680000 AND n.pwdlastset<>-1.0  AND n.pwdlastset<>0.0 RETURN n.name as Username, n.displayname as DisplayName, n.description as Description, n.enabled as Enabled, n.admincount as AdminCount, n.pwdneverexpires as PassNeverExpire, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon ORDER BY n.pwdlastset
+
+- title: "Users With 10 Year Old Passwords"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_10YrOldPasswords.html
+  cypher: >
+    WITH timestamp() / 1000 AS date_now MATCH (n:User) WHERE date_now - toInteger(n.pwdlastset) > 315360000 AND n.pwdlastset<>-1.0  AND n.pwdlastset<>0.0 RETURN n.name as Username, n.displayname as DisplayName, n.description as Description, n.enabled as Enabled, n.admincount as AdminCount, n.pwdneverexpires as PassNeverExpire, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon ORDER BY n.pwdlastset
+
+- title: "Users With Userpassword Attribute"
+  category: Hygiene
+  type: cypher
+  format: HTML
+  output: Users_userpassword.html
+  cypher: >
+    MATCH (u:User) WHERE NOT u.userpassword IS null RETURN u.name as User, u.userpassword as Password, u.enabled as Enabled
+
+- title: "User No Kerb Needed"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_NoKerbReq.html
+  cypher: >
+    MATCH (n:User {dontreqpreauth: true}) RETURN n.name as Username, n.displayname as DisplayName, n.description as Description, n.title as Title, n.pwdneverexpires as PasswordNeverExpires, n.passwordnotreqd as PasswordNotRequired, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPNs
+
+- title: "Users Computer Direct Admin Count"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_Count_DirectAdminComputers.html
+  cypher: >
+    MATCH (u:User)-[:AdminTo]->(c:Computer) RETURN count(DISTINCT(c.name)) AS COMPUTER, u.name AS USER ORDER BY count(DISTINCT(c.name)) DESC
+
+- title: "Users Computer InDirect Admin Count"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Users_Count_InDirectAdminComputers.html
+  cypher: >
+    MATCH (u:User)-[:AdminTo]->(c:Computer) RETURN count(DISTINCT(c.name)) AS COMPUTER, u.name AS USER ORDER BY count(DISTINCT(c.name)) DESC
+
+- title: "Users with Add To Group Delegation (Limited to 10000)"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: User-AddToGroupDelegation.html
+  cypher: >
+    MATCH (n:User {admincount:False}) MATCH p=allShortestPaths((n)-[r:AddMember*1..]->(m:Group)) RETURN n.name as User, m.name as Group Limit 10000
+
+- title: "Users Never Active"
+  category: Hygiene
+  type: cypher
+  format: HTML
+  output: Users_NeverActive_Enabled.html
+  cypher: >
+    MATCH (n:User) WHERE n.lastlogontimestamp=-1.0 AND n.enabled=TRUE RETURN n.name as Username ORDER BY n.name
+
+- title: "Users Password Never Expires Exception"
+  category: Hygiene
+  type: cypher
+  format: HTML
+  output: Users_NeverExpirePasswords.html
+  cypher: >
+    MATCH (n:User) WHERE n.pwdneverexpires RETURN n.name as Name,n.displayname as DisplayName,n.enabled as Enabled, n.highvalue as HighValue,  n.description as Description, n.title as Title, n.pwdneverexpires as PWDNeverExpires, n.passwordnotreqd as PWDNotReqd, n.sensitive as Sensitive, n.admincount as AdminCount, n.serviceprincipalnames as SPN, toString(datetime({epochSeconds: ToInteger(coalesce(n.pwdlastset,0))})) as PWDLastSet, toString(datetime({epochSeconds: ToInteger(coalesce(n.lastlogon,0))})) as LastLogon
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

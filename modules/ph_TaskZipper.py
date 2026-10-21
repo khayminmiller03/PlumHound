@@ -1,15 +1,14 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound (phTaskzipper.py) - Create Zip of tasks
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 #Python Libraries
-from datetime import date
 from zipfile import ZipFile
 
 #Plumhound Modules
 from lib.phLoggy import Loggy as Loggy
+
 
 def ZipTasks(verbose,Processed_Results_List, OutPathFile, Outpath):
     Loggy(verbose,900, "------ENTER: Task Zipper-----")

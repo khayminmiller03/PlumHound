@@ -1,0 +1,88 @@
+- title: "Find all Azure Users with a Path to High Value Targets"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-User2HighValue
+  cypher: >
+    MATCH (m:AZUser),(n {highvalue:true}),p=shortestPath((m)-[r*1..]->(n)) WHERE NONE (r IN relationships(p) WHERE type(r)= 'GetChanges') AND NONE (r in relationships(p) WHERE type(r)="GetChangesAll") AND NOT m=n RETURN p
+
+- title: "Find OnPrem synced Users with Paths to High Value Targets"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-OnPrem2HighValue
+  cypher: >
+    MATCH (m:AZUser WHERE m.onpremisesyncenabled = true),(n {highvalue:true}),p=shortestPath((m)-[r*1..]->(n)) WHERE NONE (r IN relationships(p) WHERE type(r)= 'GetChanges') AND NONE (r in relationships(p) WHERE type(r)='GetChangesAll') AND NOT m=n RETURN p
+
+- title: "Find shortest Paths to High Value Roles"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-ShortesttHighValue
+  cypher: >
+    MATCH (n:AZRole WHERE n.displayname =~ '(?i)Global Administrator|User Administrator|Cloud Application Administrator|Authentication Policy Administrator|Exchange Administrator|Helpdesk Administrator|PRIVILEGED AUTHENTICATION ADMINISTRATOR'), (m), p=shortestPath((m)-[r*1..]->(n)) WHERE NOT m=n RETURN p
+
+- title: "Find Azure Applications with Paths to High Value Targets"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-App2HighValue
+  cypher: >
+    MATCH (m:AZApp),(n {highvalue:true}),p=shortestPath((m)-[r*1..]->(n)) WHERE NONE (r IN relationships(p) WHERE type(r)= 'GetChanges') AND NONE (r in relationships(p) WHERE type(r)='GetChangesAll') AND NOT m=n RETURN p
+
+- title: "Find all Paths to Azure VMs"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Path2AVM
+  cypher: >
+    MATCH p = allshortestpaths((n)-[*1..]->(g:AZVM)) RETURN p
+
+- title: "Find shortest Path from Owned Azure Users to VMs"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Own2VM
+  cypher: >
+    MATCH p = shortestPath((m:AZUser{owned: true})-[*..]->(n:AZVN)) RETURN p
+
+- title: "Find all Paths to Azure KeyVaults"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Path2KeyVault
+  cypher: >
+    MATCH p = (n)-[r]->(g:AZKeyVault) RETURN p
+
+- title: "Find all Paths to Azure KeyVaults from Owned Principals"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Own2KeyVault
+  cypher: >
+    MATCH p = ({owned: true})-[r]->(g:AZKeyVault) RETURN p
+
+- title: "Find shortest Paths to Azure Subscriptions"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Path2Sub
+  cypher: >
+    MATCH p=shortestPath((m)-[r*1..]->(n:AZSubscription)) WHERE NOT m=n RETURN p
+
+- title: "Find the Paths to Resources from Azure Users that DON'T hold an Azure Role but the RBAC Role 'User Access Administrator'"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-User2AccessAdmin
+  cypher: >
+    MATCH p=(u:AZUser)-[:AZUserAccessAdministrator]->(target) WHERE NOT EXISTS((u)-[:AZMemberOf|AZHasRole*1..]->(:AZRole)) RETURN u, p
+
+- title: "Find the Paths to Resources from Azure Principals that DON'T hold an Azure Role but the RBAC 'User Access Administrator'"
+  category: Uncategorized
+  type: cypher
+  format: HTMLCSV
+  output: EID-Path2AccessAdmin
+  cypher: >
+    MATCH p=(u)-[:AZUserAccessAdministrator]->(target) WHERE NOT EXISTS((u)-[:AZMemberOf|AZHasRole*1..]->(:AZRole)) RETURN u, p
+

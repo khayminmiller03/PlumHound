@@ -1,0 +1,38 @@
+- title: "Certificate Template ESC8 Vuln"
+  category: Certificates
+  type: cypher
+  format: HTMLCSV
+  output: CertificateTemplates_ESC8
+  cypher: >
+    MATCH (n:GPO) WHERE n.type = 'Enrollment Service' and n.`Web Enrollment` = 'Enabled' RETURN n.`Display Name` as `Display Name`, n.`Template Name` as Name, n.domain as Domain, n.`Certificate Authorities` as CAs
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+
+- title: "Broken Test"
+  category: Test
+  type: cypher
+  format: HTMLCSV
+  output: broken
+  cypher: >
+    THIS IS NOT VALID CYPHER
+
+- title: "Bad Type Task"
+  category: Test
+  type: banana
+  format: HTML
+  output: bad.html
+  cypher: >
+    MATCH (n) RETURN n LIMIT 1
+
+- title: "Missing Cypher Task"
+  category: Test
+  type: cypher
+  format: HTML
+  output: missing.html
+

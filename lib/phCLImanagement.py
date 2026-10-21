@@ -1,17 +1,18 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound (phCLIManagement.py) - Management of Command Line Arguments
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 # Import Python Modules
-import argcomplete
 import argparse
+
+import argcomplete
+
 
 def SetupArguments(ph_version):
     parser = argparse.ArgumentParser(description="BloodHound Wrapper for Blue/Purple Teams "+str(ph_version), add_help=True, epilog="For more information see https://github.com/plumhound")
     argcomplete.autocomplete(parser)
-    
+
     pgroupc = parser.add_argument_group('DATABASE')
     pgroupc.add_argument("-s", "--server", type=str, help="Neo4J Server", default="bolt://localhost:7687")
     pgroupc.add_argument("-u", "--username", default="neo4j", type=str, help="Neo4J Database Useranme")
@@ -26,6 +27,9 @@ def SetupArguments(ph_version):
     pgroupx.add_argument("-bp", "--BusiestPath", dest="BusiestPath", nargs='+', default=False, type=str, help="Find the X Shortest Paths that give the most users a path to Domain Admins. Need to specified [short|all] for shortestpath and the number of results. Ex: PlumHound -cu all 3")
     pgroupx.add_argument("-ap", "--AnalyzePath", dest="AnalyzePath", nargs='+', default=False, type=str, help="Analyze 'Attack Paths' between two nodes and find which path needs to be remediated to brake the path.")
     pgroupx.add_argument("-az", "--AzPath", dest="AzPath", nargs='+', default=False, type=str, help="Analyze 'Attack Paths' between two nodes in Azure. Specify starting and ending nodes or use the built-in options to find paths to Global Administrator: [AZUser|AZGroup|AZApp|AZServicePrincipal|AZDevice]. ALL can be used to run all the built-in options at once.")
+    pgroupx.add_argument("-y", "--YamlFile", dest="YamlFile", help="Path to YAML task file")
+
+
 
     pgroupo = parser.add_argument_group('OUTPUT', "Output Options (For single cypher queries only. --These options are ignored when -x or --easy is specified.")
     pgroupo.add_argument("-t", "--title", dest="title", default="Adhoc Query", type=str, help="Report Title for Single Query [HTML,CSV,Latex]")
@@ -40,6 +44,9 @@ def SetupArguments(ph_version):
 
     pgroupv = parser.add_argument_group('VERBOSE', "Set verbosity")
     pgroupv.add_argument("-v", "--verbose", type=int, default="100", help="Verbosity 0-1000, 0 = quiet, default=100, info=150, verbose=1000")
+    pgroupv.add_argument("--logfile", dest="logfile", type=str, default="log/PlumHound.log", help="Path to log file")
+
+    parser.add_argument("--sql", dest="SqlDB", type=str, default=None, help="Path to SQLite results database (enables result storage)")
 
     args = parser.parse_args()
 

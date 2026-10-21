@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 
 # PlumHound https://github.com/PlumHound/PlumHound | https://plumhound.defensiveorigins.com/
 # BloodHoundAD Wrapper for Purple Teams | https://github.com/BloodHoundAD/BloodHound
@@ -11,11 +10,12 @@ import sys
 import traceback
 
 # Import PlumHound libraries
-import lib.phCheckPython 
+import lib.phCheckPython
 import lib.phCLImanagement
+import lib.phDatabase
+import lib.phLoggy
 import lib.phNotifyArgs
 import lib.phTasks
-import lib.phDatabase
 
 ph_version = "1.6"
 
@@ -38,18 +38,21 @@ def main() -> int:
         # Report execution parameters
         lib.phNotifyArgs.NotifyArgs(phArgs, ph_version)
 
+        lib.phLoggy.setup_logging(phArgs.verbose, phArgs.logfile)
+
+
         # Generate TaskList (jobs)
         phTaskList = lib.phTasks.MakeTaskList(phArgs)
 
+
         # Setup Driver (excluding BlueHound)
         phDriver = lib.phDatabase.setup_database_conn(phArgs)
-
-        # Execute Jobs in Task List
-        lib.phTasks.TaskExecution(phTaskList, phDriver, phArgs)
-
-        # Close the neoj4 connection.
-        lib.phDatabase.close_database_con(phArgs, phDriver)
-
+        try:
+            failures = lib.phTasks.TaskExecution(phTaskList, phDriver, phArgs)
+        finally:
+            lib.phDatabase.close_database_con(phArgs, phDriver)
+        if failures:
+            sys.exit(1)
         return 0
     except SystemExit:
         # Let argparse or other code call sys.exit() behave normally
@@ -58,6 +61,7 @@ def main() -> int:
         # Print traceback for visibility when used as a console command
         traceback.print_exc()
         return 1
+
 
 
 if __name__ == "__main__":

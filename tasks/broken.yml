@@ -1,0 +1,16 @@
+- title: "PasswordResetter Groups"
+  category: Uncategorized
+  type: cypher
+  format: HTML
+  output: Groups_CanResetPasswords.html
+  cypher: >
+    MATCH p=(m:Group)-[r:ForceChangePassword]->(n:User) RETURN m.name as Group, n.name as User ORDER BY m.name
+
+- title: "Report Index"
+  category: Uncategorized
+  type: directive
+  format: HTML
+  output: index.html
+  cypher: >
+    REPORT-INDEX
+

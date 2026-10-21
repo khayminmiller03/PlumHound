@@ -1,11 +1,12 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
 # PlumHound (phCheckPython.py) - Check for appropriate version of python
-# https://github.com/PlumHound/PlumHound 
+# https://github.com/PlumHound/PlumHound
 # License GNU GPL3
 
 import sys
+
 from lib.phLoggy import Loggy as Loggy
+
 
 def CheckPython2():
     if sys.version_info < (3, 0, 0):
